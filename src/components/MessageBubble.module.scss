@@ -1,0 +1,23 @@
+.userBubble {
+  display: inline-block;
+  background-color: #0070f3;
+  color: white;
+  padding: 10px;
+  border-radius: 10px;
+  margin: 5px 0;
+  align-self: flex-end;
+  max-width: 80%;
+  word-wrap: break-word;
+}
+
+.botBubble {
+  display: inline-block;
+  background-color: #e0e0e0;
+  color: black;
+  padding: 10px;
+  border-radius: 10px;
+  margin: 5px 0;
+  align-self: flex-start;
+  max-width: 80%;
+  word-wrap: break-word;
+}
