@@ -20,17 +20,24 @@ export default async function handler(
     return;
   }
 
-  const { prompt } = req.body;
+  const { messages } = req.body;
 
-  if (!prompt) {
-    res.status(400).json({ error: "Prompt is required" });
+  if (!messages || !Array.isArray(messages)) {
+    res
+      .status(400)
+      .json({ error: "Messages are required and should be an array" });
     return;
   }
 
   try {
+    const formattedMessages = messages.map((msg) => ({
+      role: msg.isUser ? "user" : "assistant",
+      content: msg.text,
+    }));
+
     const stream = await openai.chat.completions.create({
       model: "gpt-4o-mini",
-      messages: [{ role: "system", content: prompt }],
+      messages: formattedMessages as OpenAI.ChatCompletionMessageParam[],
       stream: true,
     });
 

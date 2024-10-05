@@ -1,5 +1,6 @@
 import Head from "next/head";
 import { useState, useRef } from "react";
+import ReactMarkdown from "react-markdown";
 import styles from "./Home.module.scss";
 import MessageBubble from "../components/MessageBubble";
 
@@ -16,7 +17,8 @@ export default function Home() {
 
   const handleFetchHaiku = async () => {
     // Add the user's message to the list
-    setMessages((prevMessages) => [...prevMessages, { text, isUser: true }]);
+    const newMessages = [...messages, { text, isUser: true }];
+    setMessages(newMessages);
     setText(""); // Clear the input field
 
     try {
@@ -25,7 +27,7 @@ export default function Home() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ prompt: text }),
+        body: JSON.stringify({ messages: newMessages }),
       });
 
       if (!response.ok) {
@@ -59,6 +61,12 @@ export default function Home() {
     }
   };
 
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      handleFetchHaiku();
+    }
+  };
+
   return (
     <>
       <Head>
@@ -79,12 +87,14 @@ export default function Home() {
               />
             ) : (
               <div key={index} className={styles.botMessage}>
-                {message.text}
+                <ReactMarkdown>{message.text}</ReactMarkdown>
               </div>
             )
           )}
           {currentMessage && (
-            <div className={styles.botMessage}>{currentMessage}</div>
+            <div className={styles.botMessage}>
+              <ReactMarkdown>{currentMessage}</ReactMarkdown>
+            </div>
           )}
           <div ref={messagesEndRef} />
         </div>
@@ -92,6 +102,7 @@ export default function Home() {
           type="text"
           value={text}
           onChange={(e) => setText(e.target.value)}
+          onKeyDown={handleKeyDown}
           placeholder="Enter text"
         />
         <button onClick={handleFetchHaiku}>Send</button>
