@@ -1,8 +1,10 @@
 import Head from "next/head";
+import { useSession } from "next-auth/react";
 import { useState, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import styles from "./Home.module.scss";
 import MessageBubble from "../components/MessageBubble";
+import LoginButton from "../components/LoginButton/LoginButton";
 
 interface Message {
   text: string;
@@ -14,6 +16,8 @@ export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentMessage, setCurrentMessage] = useState<string>("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const { data: session } = useSession();
 
   const handleFetchHaiku = async () => {
     // Add the user's message to the list
@@ -66,6 +70,14 @@ export default function Home() {
       handleFetchHaiku();
     }
   };
+
+  if (!session) {
+    return (
+      <>
+        <LoginButton />
+      </>
+    );
+  }
 
   return (
     <>
