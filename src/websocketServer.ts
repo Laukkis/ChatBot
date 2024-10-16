@@ -12,49 +12,25 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-async function generateResponse(ws: WebSocket, message: string) {
-  const stream = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
-    messages: [
-      { role: "system", content: "You are a helpful assistant." },
-      { role: "user", content: message },
-    ],
-    stream: true,
-  });
-
-  for await (const chunk of stream) {
-    const content = chunk.choices[0]?.delta?.content || "";
-    console.log("Sending chunk:", content); // Debug log
-    ws.send(content);
-  }
-  ws.close();
-}
-
-const server = createServer();
-
-const wss = new WebSocketServer({ server });
-
-wss.on("connection", (ws: WebSocket) => {
-  console.log("New client connected");
-
-  ws.on("message", async (message: string) => {
-    console.log(`Received message: ${message}`);
-    await generateResponse(ws, message);
-  });
-
-  ws.on("close", () => {
-    console.log("Client disconnected");
-  });
-
-  ws.on("error", (error) => {
-    console.error("WebSocket error:", error);
-  });
+const url = "wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01";
+const ws = new WebSocket(url, {
+    headers: {
+        "Authorization": "Bearer " + process.env.OPENAI_API_KEY,
+        "OpenAI-Beta": "realtime=v1",
+    },
 });
 
-server.listen(5000, (err?: Error) => {
-  if (err) {
-    console.error("Server error:", err);
-    throw err;
-  }
-  console.log("> WebSocket server ready on ws://localhost:5000");
+ws.on("open", function open() {
+    console.log("Connected to server." + ws.url);
+    ws.send(JSON.stringify({
+        type: "response.create",
+        response: {
+            modalities: ["text"],
+            instructions: "Please assist the user.",
+        }
+    }));
+});
+
+ws.on("message", function incoming(message) {
+    console.log(JSON.parse(message.toString()));
 });

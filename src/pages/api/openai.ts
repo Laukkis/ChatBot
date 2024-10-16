@@ -45,8 +45,10 @@ export default async function handler(
     for await (const chunk of stream) {
       const content = chunk.choices[0]?.delta?.content || "";
       res.write(content);
+      
     }
     res.end();
+    console.log('Message sent')
   } catch (error) {
     console.error("Error fetching haiku:", error);
     res.status(500).json({ error: "Internal server error" });

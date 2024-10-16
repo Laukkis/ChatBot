@@ -1,6 +1,6 @@
 import Head from "next/head";
 import { useSession } from "next-auth/react";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import styles from "./Home.module.scss";
 import MessageBubble from "../components/MessageBubble";
@@ -16,6 +16,22 @@ export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentMessage, setCurrentMessage] = useState<string>("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const initiateWebSocketConnection = async () => {
+      try {
+        const response = await fetch('/api/realtime');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        console.log('WebSocket connection initiated via API route');
+      } catch (error) {
+        console.error('Error initiating WebSocket connection:', error);
+      }
+    };
+  
+    initiateWebSocketConnection();
+  }, []);
 
   const { data: session } = useSession();
 
@@ -65,19 +81,45 @@ export default function Home() {
     }
   };
 
+  const sendMessageToWebSocket = async (message :any) => {
+    try {
+      const response = await fetch('/api/realtime', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log(data.message);
+    } catch (error) {
+      console.error('Error sending message to WebSocket:', error);
+    }
+  };
+
+  const handleSendMessage = () => {
+    sendMessageToWebSocket(text);
+    setText(''); // Clear the input field
+  };
+
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter") {
       handleFetchHaiku();
     }
   };
 
-  if (!session) {
+ /*  if (!session) {
     return (
       <>
         <LoginButton />
       </>
     );
-  }
+  } */
 
   return (
     <>
@@ -117,7 +159,8 @@ export default function Home() {
           onKeyDown={handleKeyDown}
           placeholder="Enter text"
         />
-        <button onClick={handleFetchHaiku}>Send</button>
+        <button onClick={handleSendMessage}>Send realtime</button>
+        <button onClick={handleFetchHaiku}>Send to normal</button>
       </div>
     </>
   );
