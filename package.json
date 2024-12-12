@@ -12,6 +12,7 @@
   "dependencies": {
     "@openai/realtime-api-beta": "github:openai/openai-realtime-api-beta",
     "@react-three/drei": "^9.114.6",
+    "@react-three/fiber": "^8.17.10",
     "dotenv": "^16.4.5",
     "next": "14.2.14",
     "next-auth": "^4.24.8",
@@ -22,6 +23,7 @@
     "react-markdown": "^9.0.1",
     "react-three-fiber": "^6.0.13",
     "sass": "^1.79.4",
+    "three": "^0.171.0",
     "ws": "^8.18.0"
   },
   "devDependencies": {

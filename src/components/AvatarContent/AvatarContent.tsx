@@ -1,8 +1,9 @@
+import React from 'react';
 import { useTexture, Environment, OrbitControls } from '@react-three/drei';
 import { useThree } from 'react-three-fiber';
 import { Avatar } from './Avatar';
 
-const AvatarContent = () => {
+const AvatarContent = React.memo(() => {
   const texture = useTexture('/background1.jpeg');
   const { viewport } = useThree();
 
@@ -17,6 +18,6 @@ const AvatarContent = () => {
       </mesh>
     </>
   );
-};
+});
 
 export default AvatarContent;

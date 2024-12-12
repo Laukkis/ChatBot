@@ -24,9 +24,26 @@ export function Avatar(props) {
   const {actions} = useAnimations([idleAnimation[0], bowAnimation[0]], group)
 
   useEffect(() => {
-    actions[animation].reset().fadeIn(0.5).play()
-    return () => actions[animation].fadeOut(0.5);
-  }, [animation])
+    if (actions[animation]) {
+      console.log('Setting animation:', animation);
+      actions[animation].reset().fadeIn(0.5).play();
+      console.log('Playing animation:', animation, actions[animation]);
+
+      return () => {
+        console.log('Stopping animation:', animation);
+        actions[animation].fadeOut(0.5);
+      };
+    } else {
+      console.warn('Animation action not found:', animation);
+    }
+  }, [animation, actions]);
+
+  useEffect(() => {
+    console.log('Avatar component mounted');
+    return () => {
+      console.log('Avatar component unmounted');
+    };
+  }, []);
 
   return (
     <group {...props} dispose={null} ref={group}>
