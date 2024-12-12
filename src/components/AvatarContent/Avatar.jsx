@@ -25,12 +25,8 @@ export function Avatar(props) {
 
   useEffect(() => {
     if (actions[animation]) {
-      console.log('Setting animation:', animation);
       actions[animation].reset().fadeIn(0.5).play();
-      console.log('Playing animation:', animation, actions[animation]);
-
       return () => {
-        console.log('Stopping animation:', animation);
         actions[animation].fadeOut(0.5);
       };
     } else {
@@ -38,12 +34,6 @@ export function Avatar(props) {
     }
   }, [animation, actions]);
 
-  useEffect(() => {
-    console.log('Avatar component mounted');
-    return () => {
-      console.log('Avatar component unmounted');
-    };
-  }, []);
 
   return (
     <group {...props} dispose={null} ref={group}>
