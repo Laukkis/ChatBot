@@ -1,3 +1,5 @@
+import { eventEmitter } from './eventEmiter'
+
 export const sendAudioMessageToWebSocket = async (
   { text, messages }: { text: string, messages: any[] },
   { setMessages, setText, playAudio, setAIVolume }: {
@@ -27,7 +29,10 @@ export const sendAudioMessageToWebSocket = async (
 
     while (true) {
       const { done, value } = await reader.read();
-      if (done) break;
+      if (done) {
+        eventEmitter.emit('processing', { status: 'done' });
+        break;
+      } 
 
       const chunk = new TextDecoder().decode(value);
       currentChunk += chunk;
@@ -42,6 +47,7 @@ export const sendAudioMessageToWebSocket = async (
         try {
           const jsonStr = event.slice(6).trim();
           console.log('Processing chunk:', jsonStr.slice(0, 100) + '...'); // Debug log
+          eventEmitter.emit('processing', { status: 'processing', chunk: jsonStr.slice(0, 100) });
           
           const jsonData = JSON.parse(jsonStr);
 
@@ -59,6 +65,7 @@ export const sendAudioMessageToWebSocket = async (
           }
         } catch (parseError) {
           console.error('JSON Parse Error:', parseError);
+          eventEmitter.emit('processing', { status: 'error', error: parseError });
           continue;
         }
       }

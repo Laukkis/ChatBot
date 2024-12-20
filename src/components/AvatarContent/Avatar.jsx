@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
+import * as THREE from 'three'
 import { useGraph, useFrame  } from '@react-three/fiber'
 import { useGLTF, useAnimations, useFBX } from '@react-three/drei'
 import { SkeletonUtils } from 'three-stdlib'
@@ -20,51 +21,102 @@ export function Avatar(props) {
   const { nodes, materials } = useGraph(clone)
   const {animations: idleAnimation} = useFBX('/animations/Neutral Idle.fbx')
   const {animations: bowAnimation} = useFBX('/animations/Quick Informal Bow.fbx')
+  const {animations: speakAnimation} = useFBX('/animations/Talking.fbx')
   const { isAISpeaking, speechContent = 'Testing' } = props
 
   idleAnimation[0].name = 'idle'
   bowAnimation[0].name = 'bow'
+  speakAnimation[0].name = 'speak'
 
   const [animation, setAnimation] = useState('idle');
+  const animationRef = useRef(animation);
+  const cycleCountRef = useRef(0);
+  const previousAnimationRef = useRef(null);
   const group = useRef();
-  const {actions} = useAnimations([idleAnimation[0], bowAnimation[0]], group)
-  const [morphTargetInfluence, setMorphTargetInfluence] = useState(0);
+  const {actions} = useAnimations([idleAnimation[0], bowAnimation[0],speakAnimation[0]], group)
+  /* const [morphTargetInfluence, setMorphTargetInfluence] = useState(0); */
 
- useEffect(() => {
+/*  useEffect(() => {
     if (actions[animation] && !actions[animation].isRunning()) {
-      actions[animation].reset().fadeIn(0.5).play();
+      actions[animation].reset().fadeIn(0.8).play();
       return () => {
-        actions[animation].fadeOut(0.5);
+        actions[animation].fadeOut(0.8);
       };
     } else {
       console.warn('Animation action not found or already running:', animation);
     }
-  }, [animation, actions]); 
+  }, [animation, actions]);  */
 
   useEffect(() => {
-    console.log('speechContent', speechContent);
-    // Add logic to handle speechContent changes if necessary
-  }, [speechContent]);
-
- useEffect(() => {
-    if (isAISpeaking) {
-      setAnimation('bow')
+    if (actions.idle) {
+        actions.idle.play();
+        animationRef.current = 'idle';
     }
-  }, [animation, actions]);
+}, [actions]);
+
+useEffect(() => {
+  let animationInterval;
+  
+  if (isAISpeaking) {
+      animationInterval = setInterval(() => {
+          const currentAnimName = animationRef.current;
+          
+          if (cycleCountRef.current < 5) {
+              // Play idle animation for first two cycles
+              if (currentAnimName !== 'idle' && actions.idle) {
+                  actions[currentAnimName]?.fadeOut(0.5);
+                  actions.idle.reset().fadeIn(0.5).play();
+                  animationRef.current = 'idle';
+              }
+              cycleCountRef.current++;
+          } else {
+              // On third cycle, play speak animation
+              if (currentAnimName !== 'speak' && actions.speak) {
+                  actions[currentAnimName]?.fadeOut(0.5);
+                  actions.speak.reset().fadeIn(0.5).play();
+                  animationRef.current = 'speak';
+                  cycleCountRef.current = 0; // Reset counter
+              }
+          }
+      }, 1000); // Adjust timing as needed
+  } else {
+      // Reset to idle when not speaking
+      if (actions[animationRef.current] && actions.idle) {
+          actions[animationRef.current].fadeOut(0.5);
+          actions.idle.reset().fadeIn(0.5).play();
+          animationRef.current = 'idle';
+          cycleCountRef.current = 0;
+      }
+  }
+
+  return () => {
+      if (animationInterval) clearInterval(animationInterval);
+  };
+}, [isAISpeaking, actions]);
 
   useFrame(() => {
+    if (!nodes.Wolf3D_Head) return;
+    
     if (isAISpeaking) {
-      const phoneme = speechContent.charAt(Math.floor(performance.now() / 50) % speechContent.length);
+      const now = performance.now();
+      const phoneme = speechContent.charAt(Math.floor(now / 100) % speechContent.length); // Slowed down update rate
       const visemeIndex = phonemeToViseme[phoneme] || 0;
-      setMorphTargetInfluence(visemeIndex);
-    } else {
-      setMorphTargetInfluence(1);
-    }
-
-    if (nodes.Wolf3D_Head) {
+      
+      // Smooth transition between morphs
       nodes.Wolf3D_Head.morphTargetInfluences.forEach((_, index) => {
-        nodes.Wolf3D_Head.morphTargetInfluences[index] = index === morphTargetInfluence ? 1 : 0;
+        const targetValue = index === visemeIndex ? 0.5 : 0; // Reduced influence strength
+        nodes.Wolf3D_Head.morphTargetInfluences[index] = THREE.MathUtils.lerp(
+          nodes.Wolf3D_Head.morphTargetInfluences[index],
+          targetValue,
+          0.1
+        );
       });
+    } else {
+      // Reset all morphs when not speaking
+      nodes.Wolf3D_Head.morphTargetInfluences.forEach((_, index) => {
+        nodes.Wolf3D_Head.morphTargetInfluences[index] = 0;
+      });
+      setAnimation('idle');
     }
   });
   return (

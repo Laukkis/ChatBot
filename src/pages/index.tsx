@@ -7,6 +7,8 @@ import { Canvas } from 'react-three-fiber';
 import AvatarContent from '@/components/AvatarContent/AvatarContent';
 import { sendAudioMessageToWebSocket } from "@/utils/sendMessageToWebsocket";
 import { startRecording, stopRecording } from "@/utils/speechRecoqnition";
+import { eventEmitter } from "@/utils/eventEmiter";
+
 
 interface Message {
   text: string;
@@ -20,15 +22,27 @@ export default function Home() {
   const [isRecording, setIsRecording] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const recognitionRef = useRef<any | null>(null);
+  const recognitionRef = useRef<any | null>(null);  
   const [isAISpeaking, setIsAISpeaking] = useState(false);
   const [aiVolume, setAIVolume] = useState(0);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
 
   useEffect(() => {
     console.log('isAISpeaking state changed:', isAISpeaking);
     // Add any additional logic you want to execute when isAISpeaking changes
   }, [isAISpeaking]);
+
+  eventEmitter.on('processing', (data) => {
+    if (data.status === 'processing') {
+        console.log('Processing status:', data.chunk);
+        setIsAISpeaking(true);
+    } else if (data.status === 'done') {  // Add this condition
+        setIsAISpeaking(false);
+    } else if (data.status === 'error') {
+        console.error('Processing error:', data.error);
+    }
+});
 
   const handleSendNormalMessage = async () => {
     const newMessages = [...messages, { text, isUser: true }];
@@ -81,6 +95,8 @@ const handleSendMessage = async () => {
     { text, messages },
     { setMessages, setText,/*  setIsAISpeaking, */ playAudio, setAIVolume }
   );
+  setIsAISpeaking(true);
+  console.log('isAISpeaking:', isAISpeaking);
 };
 
   return (
